@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Stripe = require("stripe");
-const stripe = Stripe("sk_test_26PHem9AhJZvU623DfE1x4sd");
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // --- PayPal SDK Setup ---
 const paypal = require("@paypal/checkout-server-sdk");
