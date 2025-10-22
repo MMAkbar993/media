@@ -1,0 +1,363 @@
+
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    sans-serif;
+  line-height: 1.6;
+  color: #1a202c;
+  background-color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl;
+}
+
+.btn-secondary {
+  @apply bg-white border-2 border-gray-300 hover:border-blue-500 text-gray-700 hover:text-blue-600 font-semibold py-3 px-6 rounded-lg transition-all duration-300;
+}
+
+.btn-success {
+  @apply bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300;
+}
+
+.btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl;
+}
+
+.card-header {
+  @apply border-b border-gray-200 pb-4 mb-4;
+}
+
+/* Form styles */
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-error {
+  @apply text-red-500 text-sm mt-1;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-text {
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Custom checkbox */
+.custom-checkbox {
+  @apply appearance-none w-5 h-5 border-2 border-gray-300 rounded checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200;
+}
+
+.custom-checkbox:checked::after {
+  content: "✓";
+  @apply text-white text-sm font-bold flex items-center justify-center;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2.5;
+}
+
+.progress-fill {
+  @apply bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full transition-all duration-500 ease-out;
+}
+
+/* Toast notifications */
+.toast {
+  @apply fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 max-w-sm;
+}
+
+.toast-success {
+  @apply border-green-200 bg-green-50;
+}
+
+.toast-error {
+  @apply border-red-200 bg-red-50;
+}
+
+.toast-warning {
+  @apply border-yellow-200 bg-yellow-50;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+}
+
+.modal-content {
+  @apply bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6;
+}
+
+/* Service cards */
+.service-card {
+  @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer;
+}
+
+.service-card.active {
+  @apply border-blue-500 bg-blue-50;
+}
+
+/* Package cards */
+.package-card {
+  @apply bg-white rounded-xl shadow-lg border-2 border-gray-200 p-6 transition-all duration-300 hover:shadow-xl hover:border-blue-300;
+}
+
+.package-card.popular {
+  @apply border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 relative;
+}
+
+.package-card.popular::before {
+  content: "Most Popular";
+  @apply absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold;
+}
+
+/* Stats counter */
+.stats-counter {
+  @apply text-4xl font-bold text-blue-600 mb-2;
+}
+
+/* Feature list */
+.feature-list {
+  @apply space-y-3;
+}
+
+.feature-item {
+  @apply flex items-center space-x-3;
+}
+
+.feature-icon {
+  @apply w-5 h-5 text-green-500 flex-shrink-0;
+}
+
+/* Testimonial card */
+.testimonial-card {
+  @apply bg-white rounded-xl shadow-lg p-6 border border-gray-100;
+}
+
+.testimonial-rating {
+  @apply flex space-x-1 mb-4;
+}
+
+.star {
+  @apply w-5 h-5 text-yellow-400;
+}
+
+/* FAQ section */
+.faq-item {
+  @apply border border-gray-200 rounded-lg mb-4 overflow-hidden;
+}
+
+.faq-question {
+  @apply w-full text-left p-4 bg-gray-50 hover:bg-gray-100 font-semibold text-gray-800 transition-colors duration-200;
+}
+
+.faq-answer {
+  @apply p-4 text-gray-600 border-t border-gray-200;
+}
+
+/* Social proof */
+.social-proof {
+  @apply flex items-center space-x-2 text-sm text-gray-600;
+}
+
+.social-proof-icon {
+  @apply w-4 h-4 text-green-500;
+}
+
+/* Order tracking */
+.tracking-step {
+  @apply flex items-center space-x-4 p-4 border-l-4 border-gray-200;
+}
+
+.tracking-step.completed {
+  @apply border-green-500 bg-green-50;
+}
+
+.tracking-step.active {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.tracking-icon {
+  @apply w-8 h-8 rounded-full flex items-center justify-center;
+}
+
+.tracking-icon.completed {
+  @apply bg-green-500 text-white;
+}
+
+.tracking-icon.active {
+  @apply bg-blue-500 text-white;
+}
+
+.tracking-icon.pending {
+  @apply bg-gray-300 text-gray-600;
+}
+
+/* Platform specific styles */
+.instagram-gradient {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+.tiktok-gradient {
+  background: linear-gradient(45deg, #ff0050 0%, #00f2ea 100%);
+}
+
+/* Responsive design helpers */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    @apply hidden;
+  }
+
+  .mobile-full {
+    @apply w-full;
+  }
+
+  .mobile-center {
+    @apply text-center;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    @apply border-2 border-gray-800;
+  }
+
+  .btn-primary {
+    @apply bg-blue-800 border-2 border-blue-900;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom container for consistent padding */
+.custom-container {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Primary gradient background for hero sections */
+.primary-gradient {
+  background: linear-gradient(180deg, #e0f2fe 0%, #ffffff 100%);
+}
+
+/* Text gradient for headings */
+.text-gradient {
+  background: linear-gradient(90deg, #005cd9 0%, #ff55f8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Common flex utilities */
+.center {
+  @apply flex items-center justify-center;
+}
+
+.space-between {
+  @apply flex items-center justify-between;
+}
+
+/* Heading styles */
+.heading {
+  @apply text-4xl md:text-5xl font-bold text-gray-900;
+}
+
+/* Text colors */
+.text-primary-text-color {
+  @apply text-gray-900;
+}
+
+.text-secondary-text-color {
+  @apply text-gray-600;
+}
+
+.hero-tiles {
+    @apply bg-gradient-to-r from-[#ffa567] to-[#ff4330] text-white text-center py-4 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+
+  /* Add this to your global CSS file */
+@keyframes scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-scroll {
+  animation: scroll 20s linear infinite; /* infinite loop */
+}
