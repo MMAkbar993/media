@@ -53,27 +53,60 @@ const CheckoutSummaryCard = ({ formData, onContinue, isContinueDisabled = false,
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg">
-      <div className="flex items-center mb-6">
-        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mr-4">
-          {/* Placeholder for profile picture */}
-          <User className="w-6 h-6 text-gray-500" />
+      {/* Profile Information */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center">
+          <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
+            {formData.profileImage ? (
+              <img
+                src={`/api/instagram/image-proxy?url=${encodeURIComponent(formData.profileImage)}`}
+                alt={formData.username || "profile"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                  e.target.nextSibling.style.display = 'flex'
+                }}
+              />
+            ) : null}
+            <div className={`w-full h-full bg-red-500 flex items-center justify-center ${formData.profileImage ? 'hidden' : 'flex'}`}>
+              <User className="w-6 h-6 text-white" />
+             
+            </div>
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-gray-900">@{formData.username || "travisscott"}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xl font-semibold text-gray-900">@{formData.username || "username"}</p>
-          <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline focus:outline-none">
-            Change username
-          </button>
-        </div>
+        <button onClick={() => navigate(-1)} className="text-sm text-blue-600 hover:underline focus:outline-none">
+          Change
+        </button>
       </div>
 
+      {/* Package Details */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           {getIcon(formData.serviceType)}
-          <span className="text-lg font-semibold text-gray-900">
-            {formData.quantity} {getServiceTitle(formData.serviceType)}
-          </span>
+          <div>
+            <span className="text-lg font-semibold text-gray-900">
+              {formData.quantity} {getServiceTitle(formData.serviceType)}
+            </span>
+            <p className="text-sm text-gray-500">
+              {Math.floor(formData.quantity / (formData.selectedPostIds?.length || 1))} {getServiceTitle(formData.serviceType)} / {formData.selectedPostIds?.length || 0} posts
+            </p>
+          </div>
         </div>
-        <span className="text-lg font-semibold text-gray-900">${formData.price}</span>
+        <button className="text-sm text-blue-600 hover:underline focus:outline-none">
+          Change
+        </button>
+      </div>
+
+      {/* Subtotal */}
+      <div className="flex items-center justify-between mb-8">
+        <span className="text-lg font-semibold text-gray-900">Subtotal</span>
+        <div className="flex items-center">
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded mr-2">USD</span>
+          <span className="text-lg font-semibold text-gray-900">${formData.price}</span>
+        </div>
       </div>
 
       {showUpsells && (
@@ -137,7 +170,7 @@ const CheckoutSummaryCard = ({ formData, onContinue, isContinueDisabled = false,
         <button
           onClick={onContinue}
           disabled={isContinueDisabled}
-          className={`w-full mt-8 flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-lg font-bold text-white bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ${isContinueDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-bold text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200 ${isContinueDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           Continue to checkout
         </button>

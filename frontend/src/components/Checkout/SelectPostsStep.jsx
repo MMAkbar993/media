@@ -97,6 +97,7 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
       ...prev,
       selectedPostIds: selectedPosts,
       targetUrl,
+      profileImage: profile?.profile_pic_url || "",
     }))
     onNext()
   }
@@ -104,50 +105,35 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
   const isContinueDisabled = selectedPosts.length === 0
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Section: Select Posts */}
-        <div className="bg-white p-8 rounded-lg shadow-lg relative">
-          <div className="absolute top-4 left-4 text-gray-500 flex items-center">
-            <button onClick={onBack} className="flex items-center text-gray-500 hover:text-gray-700">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5 mr-1"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back
-            </button>
-          </div>
-          <div className="absolute top-4 right-4">
-            {/* <img src={buzzoidLogo || "/placeholder.svg"} alt="Buzzoid Logo" className="h-8" /> */}
-            {/* hypeis.us */}
-          </div>
-
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8 mt-12">Select posts</h2>
-
-          {/* Profile Picture and Username */}
-          {profile && (
-            <div className="flex flex-col items-center mb-6">
-              <img
-                src={profile.profile_pic_url ? `/api/instagram/image-proxy?url=${encodeURIComponent(profile.profile_pic_url)}` : "/placeholder.svg"}
-                alt={profile.username}
-                className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
-              />
-              <div className="mt-2 font-semibold text-lg">{profile.username}</div>
+    <div className="min-h-screen bg-white">
+      {/* Progress Indicator */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-center space-x-8">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-semibold">1</div>
+              <span className="ml-2 text-gray-500 font-medium">Details</span>
             </div>
-          )}
+            <div className="flex-1 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">2</div>
+              <span className="ml-2 text-orange-500 font-medium">Posts</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-semibold">3</div>
+              <span className="ml-2 text-gray-500 font-medium">Checkout</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <div className="mb-6 text-center text-gray-600">
-            <p>
-              <span className="font-semibold">{selectedPosts.length}</span> posts selected /{" "}
-              <span className="font-semibold">{formData.quantity / (posts.length || 1)}</span> {formData.serviceType}{" "}
-              per post
-            </p>
+      <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Section: Select Posts */}
+        <div className="bg-white p-8">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Select posts</h2>
+            <span className="text-gray-500 font-medium">{selectedPosts.length} selected</span>
           </div>
 
           {loadingPosts ? (
@@ -162,7 +148,7 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className={`relative aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer ${selectedPosts.includes(post.id) ? "border-4 border-blue-500" : "border border-gray-300"
+                  className={`relative aspect-square bg-gray-200 rounded-lg overflow-hidden cursor-pointer ${selectedPosts.includes(post.id) ? "border-4 border-orange-500" : "border border-gray-300"
                     }`}
                   onClick={() => handlePostSelect(post.id)}
                 >
@@ -176,17 +162,18 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
                     className="w-full h-full object-cover"
                   />
                   {selectedPosts.includes(post.id) && (
-                    <div className="absolute top-2 right-2 bg-blue-500 rounded-full p-1">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2.5}
-                        stroke="currentColor"
-                        className="w-4 h-4 text-white"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
+                    <div className="absolute inset-0 bg-orange-500 bg-opacity-80 flex items-center justify-center">
+                      <div className="flex items-center text-white font-bold">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                          className="w-6 h-6 mr-2"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        <span>+ {Math.floor(formData.quantity / selectedPosts.length)}</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -194,26 +181,29 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
             </div>
           )}
 
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Advanced Options</h3>
-            <div className="relative">
-              <select className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none bg-white">
-                <option>Delivery speed</option>
-                <option>Instant</option>
-                <option>Gradual (24 hours)</option>
-                <option>Gradual (48 hours)</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
-              </div>
-            </div>
+          <div className="mt-8 text-center">
+            <button className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5 mr-2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Load More...
+            </button>
           </div>
         </div>
 
         {/* Right Section: Summary Card */}
-        <CheckoutSummaryCard formData={formData} onContinue={handleSubmit} isContinueDisabled={isContinueDisabled} />
+        <CheckoutSummaryCard 
+          formData={formData} 
+          onContinue={handleSubmit} 
+          isContinueDisabled={isContinueDisabled} 
+        />
       </div>
     </div>
   )

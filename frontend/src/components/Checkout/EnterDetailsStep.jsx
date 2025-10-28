@@ -2,16 +2,12 @@
 
 import { useState, useEffect } from "react"
 import DOMPurify from "dompurify"
-import { Star, User, Heart, MessageCircle, Eye, Verified, Grid3X3, Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Star, Heart } from "lucide-react"
 import ApiService from "../../services/api"
 
 const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, generalError }) => {
   const [errors, setErrors] = useState({})
-  const [instagramProfile, setInstagramProfile] = useState(null)
-  const [instagramPosts, setInstagramPosts] = useState([])
-  const [loadingProfile, setLoadingProfile] = useState(false)
-  const [profileError, setProfileError] = useState(null)
-  const [profileSource, setProfileSource] = useState(null)
+  const [profile, setProfile] = useState(null)
 
   useEffect(() => {
     if (packageDetails) {
@@ -27,52 +23,30 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
     }
   }, [packageDetails, setFormData])
 
-  // Enhanced profile fetching with better error handling
+  // Fetch profile for followers since they skip SelectPostsStep
   useEffect(() => {
-    const fetchInstagramProfile = async () => {
-      if (formData.username && formData.username.length > 2 && packageDetails?.platform === "Instagram") {
-        setLoadingProfile(true)
-        setProfileError(null)
-        setProfileSource(null)
-
+    const fetchProfile = async () => {
+      if (formData.username && formData.username.length > 2 && formData.serviceType === "followers") {
         try {
-          // Clean username (remove @ if present)
           const cleanUsername = formData.username.replace("@", "").toLowerCase()
-          console.log(`Attempting to fetch profile for: ${cleanUsername}`)
-
-          // Fetch profile using enhanced API service
-          const profile = await ApiService.fetchUserProfile(cleanUsername, "instagram")
-
-          if (profile) {
-            console.log("Profile fetched successfully:", profile)
-            setInstagramProfile(profile)
-            setInstagramPosts(profile.recent_media || [])
-            setProfileSource(profile.source || "api")
-          } else {
-            console.log("No profile data returned")
-            setProfileError("Profile not found or account is private")
-            setInstagramProfile(null)
-            setInstagramPosts([])
+          const profileData = await ApiService.fetchUserProfile(cleanUsername, formData.platform)
+          if (profileData) {
+            setProfile(profileData)
+            setFormData((prev) => ({
+              ...prev,
+              profileImage: profileData.profile_pic_url || "",
+            }))
           }
         } catch (error) {
           console.error("Profile fetch error:", error)
-          setProfileError(`Failed to load profile: ${error.message}`)
-          setInstagramProfile(null)
-          setInstagramPosts([])
-        } finally {
-          setLoadingProfile(false)
         }
-      } else {
-        setInstagramProfile(null)
-        setInstagramPosts([])
-        setProfileError(null)
-        setProfileSource(null)
       }
     }
 
-    const debounceTimer = setTimeout(fetchInstagramProfile, 600)
+    const debounceTimer = setTimeout(fetchProfile, 600)
     return () => clearTimeout(debounceTimer)
-  }, [formData.username, packageDetails?.platform])
+  }, [formData.username, formData.serviceType, formData.platform, setFormData])
+
 
   const validateForm = () => {
     const newErrors = {}
@@ -97,6 +71,11 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
   const handleSubmit = (e) => {
     e.preventDefault()
     if (validateForm()) {
+      // For followers, we need to fetch the profile image since we skip SelectPostsStep
+      if (formData.serviceType === "followers") {
+        // This will be handled by the parent component or we can fetch it here
+        // For now, we'll let the parent handle it
+      }
       onNext()
     }
   }
@@ -116,37 +95,12 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
     }))
   }
 
-  const handleRefreshProfile = async () => {
-    if (formData.username) {
-      ApiService.clearCache()
-      const cleanUsername = formData.username.replace("@", "").toLowerCase()
-      setLoadingProfile(true)
-      setProfileError(null)
-
-      try {
-        const profile = await ApiService.fetchUserProfile(cleanUsername, "instagram")
-        if (profile) {
-          setInstagramProfile(profile)
-          setInstagramPosts(profile.recent_media || [])
-          setProfileSource(profile.source || "api")
-        }
-      } catch (error) {
-        setProfileError("Failed to refresh profile")
-      } finally {
-        setLoadingProfile(false)
-      }
-    }
-  }
-
-  const formatNumber = (num) => {
-    return ApiService.formatNumber(num)
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Section: Form */}
-        <div className="lg:col-span-1 bg-white p-8 rounded-lg shadow-lg relative">
+        <div className="bg-white p-8 rounded-lg shadow-lg relative">
           <div className="absolute top-4 left-4 text-gray-500 flex items-center">
             <button
               onClick={() => window.history.back()}
@@ -167,7 +121,7 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
           </div>
 
           <div className="text-center mt-12 mb-8">
-            <p className="text-green-600 font-semibold text-sm">451 live users on checkout</p>
+            <p className="text-green-600 font-semibold text-sm">226 live users on checkout</p>
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Get started</h2>
@@ -186,7 +140,20 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="w-5 h-5 text-gray-400" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-5 h-5 text-gray-400"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                    />
+                  </svg>
                 </div>
                 <input
                   type="text"
@@ -205,11 +172,6 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
                   required
                 />
                 {errors.username && <p className="mt-2 text-sm text-red-600">{errors.username}</p>}
-                {loadingProfile && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
-                  </div>
-                )}
               </div>
             </div>
 
@@ -258,15 +220,17 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Heart className="w-5 h-5 text-gray-400" />
                 </div>
-                <input
-                  type="text"
-                  id="package"
-                  name="package"
-                  value={`${packageDetails?.quantity || 0} ${packageDetails?.serviceType || "likes"} - $${packageDetails?.price || 0}`}
-                  className="mt-1 block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-700"
-                  disabled
-                  readOnly
-                />
+                <div className="flex">
+                  <div className="flex-1 pl-10 pr-4 py-3 border border-gray-300 rounded-l-md shadow-sm bg-white text-gray-700 flex items-center">
+                    {packageDetails?.quantity || 0} {packageDetails?.serviceType || "likes"}
+                  </div>
+                  <div className="px-4 py-3 border border-l-0 border-gray-300 rounded-r-md shadow-sm bg-white text-gray-700 flex items-center">
+                    ${packageDetails?.price || 0}
+                    <svg className="ml-2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -317,165 +281,26 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
           </div>
         </div>
 
-        {/* Middle Section: Instagram Profile */}
-        <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900">Profile Preview</h3>
-            {instagramProfile && (
-              <button
-                onClick={handleRefreshProfile}
-                disabled={loadingProfile}
-                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                title="Refresh profile"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingProfile ? "animate-spin" : ""}`} />
-              </button>
-            )}
-          </div>
-
-          {loadingProfile && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="animate-spin h-8 w-8 text-purple-600" />
-              <span className="ml-2 text-gray-600">Loading real profile data...</span>
-            </div>
-          )}
-
-          {profileError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                <p className="text-red-800">{profileError}</p>
-              </div>
-              <p className="text-gray-500 text-sm mt-2">Enter a valid Instagram username to see profile preview</p>
-            </div>
-          )}
-
-          {instagramProfile && !loadingProfile && (
-            <div className="space-y-4">
-              {/* Data source indicator */}
-              {profileSource && (
-                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded flex items-center justify-between">
-                  <span>Data source: {profileSource === "rapidapi" ? "Real Instagram API" : "Enhanced Data"}</span>
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      profileSource === "rapidapi" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {profileSource === "rapidapi" ? "LIVE" : "CACHED"}
-                  </span>
-                </div>
-              )}
-
-              {/* Profile Header */}
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                <img
-                  src={instagramProfile.profile_pic_url || "/placeholder.svg?height=64&width=64"}
-                  alt={`${instagramProfile.username}'s profile`}
-                  className="w-16 h-16 rounded-full object-cover"
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    e.target.src = "/placeholder.svg?height=64&width=64"
-                  }}
-                />
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <h4 className="font-bold text-lg">@{instagramProfile.username}</h4>
-                    {instagramProfile.is_verified && <Verified className="w-5 h-5 text-blue-500" />}
-                    {instagramProfile.is_private && (
-                      <span className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">Private</span>
-                    )}
-                  </div>
-                  <p className="text-gray-600 text-sm">{instagramProfile.full_name}</p>
-                  {instagramProfile.biography && (
-                    <p className="text-gray-700 text-sm mt-1 line-clamp-2">{instagramProfile.biography}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-bold text-lg">{formatNumber(instagramProfile.media_count)}</p>
-                  <p className="text-gray-600 text-sm">Posts</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-bold text-lg">{formatNumber(instagramProfile.followers_count)}</p>
-                  <p className="text-gray-600 text-sm">Followers</p>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-bold text-lg">{formatNumber(instagramProfile.following_count)}</p>
-                  <p className="text-gray-600 text-sm">Following</p>
-                </div>
-              </div>
-
-              {/* Recent Posts Grid */}
-              {instagramPosts.length > 0 && (
-                <div>
-                  <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Grid3X3 className="w-4 h-4" />
-                    Recent Posts ({instagramPosts.length})
-                  </h5>
-                  <div className="grid grid-cols-3 gap-2">
-                    {instagramPosts.slice(0, 6).map((post, index) => (
-                      <div
-                        key={post.id || index}
-                        className="relative aspect-square bg-gray-200 rounded-lg overflow-hidden group"
-                      >
-                        <img
-                          src={post.media_url || post.thumbnail_url || "/placeholder.svg?height=150&width=150"}
-                          alt="Instagram post"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                          crossOrigin="anonymous"
-                          onError={(e) => {
-                            e.target.src = "/placeholder.svg?height=150&width=150"
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-4 text-white text-sm">
-                            <div className="flex items-center space-x-1">
-                              <Heart className="w-4 h-4" />
-                              <span>{formatNumber(post.like_count || 0)}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <MessageCircle className="w-4 h-4" />
-                              <span>{formatNumber(post.comments_count || 0)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        {post.media_type === "VIDEO" && (
-                          <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-                            <Eye className="w-3 h-3" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!instagramProfile && !loadingProfile && !profileError && (
-            <div className="text-center py-8">
-              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Enter an Instagram username to see profile preview</p>
-            </div>
-          )}
-        </div>
-
         {/* Right Section: Testimonial */}
-        <div className="lg:col-span-1 hidden lg:flex flex-col items-center justify-center p-8">
+        <div className="hidden lg:flex flex-col items-center justify-center p-8">
           <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-sm">
-            <p className="text-gray-700 text-lg italic mb-6">
-              "One of the very best sites to invest in social media marketing packages is hypeis.us."
+            <div className="flex items-center justify-center mb-4">
+              <p className="text-gray-900 font-bold text-lg mr-3">DECCAN HERALD</p>
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 text-orange-500 fill-current" />
+                ))}
+              </div>
+            </div>
+            <p className="text-gray-700 text-lg mb-6">
+              "Among the top-rated sites to buy Instagram followers, Buzzoid is a trusted name in this niche. Their platform is an ideal way to elevate your presence on social media."
             </p>
-            <div className="flex justify-center mb-4">
+            <p className="text-gray-800 font-semibold mb-6 text-left">— Deccan Herald</p>
+            <div className="flex justify-center">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 text-red-500 fill-current" />
+                <Star key={i} className="w-5 h-5 text-green-500 fill-current" />
               ))}
             </div>
-            <p className="text-gray-800 font-semibold mb-4">— ABC Action News</p>
-            <img src="/images/abc-action-news.png" alt="ABC Action News Logo" className="mx-auto h-12" />
           </div>
         </div>
       </div>

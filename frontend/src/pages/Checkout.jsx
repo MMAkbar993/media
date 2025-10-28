@@ -24,6 +24,7 @@ const Checkout = () => {
     quality: "",
     sendPromotions: false,
     selectedPostIds: [], // For likes, views, comments
+    profileImage: "", // Profile image URL
   })
   const [generalError, setGeneralError] = useState("")
 
