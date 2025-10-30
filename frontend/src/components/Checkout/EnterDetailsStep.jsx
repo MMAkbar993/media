@@ -8,6 +8,36 @@ import ApiService from "../../services/api"
 const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, generalError }) => {
   const [errors, setErrors] = useState({})
   const [profile, setProfile] = useState(null)
+  const testimonials = [
+    {
+      outlet: "US Magazine",
+      quote:
+        "If you're looking to buy Instagram followers, Buzzoid is one of the most popular services you'll find.",
+      author: "US Magazine",
+    },
+    {
+      outlet: "Denver 7",
+      quote:
+        "When you want to accomplish your social media goals, Buzzoid is the place to turn.",
+      author: "Denver 7",
+    },
+    {
+      outlet: "Deccan Herald",
+      quote:
+        "Among the top-rated sites to buy Instagram followers, Buzzoid is a trusted name in this niche. Their platform is an ideal way to elevate your presence on social media.",
+      author: "Deccan Herald",
+    },
+  ]
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0)
+
+  // Auto-slide testimonials
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setActiveTestimonialIndex((currentIndex) => (currentIndex + 1) % testimonials.length)
+    }, 4000)
+
+    return () => clearInterval(intervalId)
+  }, [testimonials.length])
 
   useEffect(() => {
     if (packageDetails) {
@@ -120,8 +150,11 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
             </button>
           </div>
 
-          <div className="text-center mt-12 mb-8">
-            <p className="text-green-600 font-semibold text-sm">226 live users on checkout</p>
+          <div className="flex justify-center mt-12 mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1">
+              <span className="text-xs font-semibold text-green-800 bg-white rounded-full px-2 py-0.5 border border-green-300">226</span>
+              <span className="text-sm font-medium text-green-800">live users on checkout</span>
+            </div>
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Get started</h2>
@@ -216,22 +249,28 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
               <label htmlFor="package" className="sr-only">
                 Package
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Heart className="w-5 h-5 text-gray-400" />
-                </div>
-                <div className="flex">
-                  <div className="flex-1 pl-10 pr-4 py-3 border border-gray-300 rounded-l-md shadow-sm bg-white text-gray-700 flex items-center">
-                    {packageDetails?.quantity || 0} {packageDetails?.serviceType || "likes"}
-                  </div>
-                  <div className="px-4 py-3 border border-l-0 border-gray-300 rounded-r-md shadow-sm bg-white text-gray-700 flex items-center">
-                    ${packageDetails?.price || 0}
-                    <svg className="ml-2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
+              <button
+                type="button"
+                role="combobox"
+                aria-expanded="false"
+                className="w-full border border-gray-300 rounded-md bg-white shadow-sm px-4 py-3 flex items-center justify-between"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded bg-gray-100">
+                    <Heart className="w-4 h-4 text-gray-700" />
+                  </span>
+                  <span className="text-gray-800">
+                    <strong>{packageDetails?.quantity || 0}</strong>
+                    <span className="ml-1">{packageDetails?.serviceType || "likes"}</span>
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 text-gray-800">
+                  <span className="font-semibold">${packageDetails?.price || 0}</span>
+                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                    <path d="M1.73047 1.33594L6.11119 5.71666L10.4919 1.33594" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
+                  </svg>
+                </span>
+              </button>
             </div>
 
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
@@ -281,11 +320,11 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
           </div>
         </div>
 
-        {/* Right Section: Testimonial */}
+        {/* Right Section: Testimonials (3 reviews) */}
         <div className="hidden lg:flex flex-col items-center justify-center p-8">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md w-full">
             <div className="flex items-center justify-center mb-4">
-              <p className="text-gray-900 font-bold text-lg mr-3">DECCAN HERALD</p>
+              <p className="text-gray-900 font-bold text-lg mr-3 uppercase">{testimonials[activeTestimonialIndex].outlet}</p>
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 text-orange-500 fill-current" />
@@ -293,12 +332,21 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
               </div>
             </div>
             <p className="text-gray-700 text-lg mb-6">
-              "Among the top-rated sites to buy Instagram followers, Buzzoid is a trusted name in this niche. Their platform is an ideal way to elevate your presence on social media."
+              "{testimonials[activeTestimonialIndex].quote}"
             </p>
-            <p className="text-gray-800 font-semibold mb-6 text-left">— Deccan Herald</p>
-            <div className="flex justify-center">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 text-green-500 fill-current" />
+            <p className="text-gray-800 font-semibold mb-6 text-left">— {testimonials[activeTestimonialIndex].author}</p>
+
+            {/* Dots */}
+            <div className="flex items-center justify-center gap-2">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  aria-label={`Show testimonial ${index + 1}`}
+                  onClick={() => setActiveTestimonialIndex(index)}
+                  className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                    activeTestimonialIndex === index ? "bg-gray-900" : "bg-gray-300"
+                  }`}
+                />
               ))}
             </div>
           </div>
