@@ -273,20 +273,7 @@ const EnterDetailsStep = ({ packageDetails, formData, setFormData, onNext, gener
               </button>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <p className="text-red-700 text-sm font-semibold mb-2">
-                Special Offer: Buy Automatic Instagram Likes and Save 25%!
-              </p>
-              <p className="text-red-600 text-xs mb-3">
-                Save time manually buying likes every time you post by subscribing to our Automatic Likes.
-              </p>
-              <button
-                type="button"
-                className="bg-yellow-500 text-white font-bold py-2 px-6 rounded-full hover:bg-yellow-600 transition-colors"
-              >
-                Save 25% now!
-              </button>
-            </div>
+            
 
             <div className="flex items-center">
               <input

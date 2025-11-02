@@ -155,12 +155,12 @@ const PaymentStep = ({ formData, onBack, setGeneralError }) => {
   const [totalPrice, setTotalPrice] = useState(parseFloat(formData.price) || 0);
 
   // Exclusive offers data
-  const exclusiveOffers = [
-    { id: 1, label: "25 likes x 2 posts", price: 1.49, originalPrice: 1.99, discount: "25% OFF", color: "pink" },
-    { id: 2, label: "50 likes x 2 posts", price: 2.61, originalPrice: 3.49, discount: "25% OFF", color: "pink" },
-    { id: 3, label: "100 followers", price: 2.61, originalPrice: 3.49, discount: "25% OFF", color: "pink" },
-    { id: 4, label: "Profile Analysis", price: 4.99, originalPrice: 9.98, discount: "50% OFF", color: "pink" }
-  ];
+  // const exclusiveOffers = [
+  //   { id: 1, label: "25 likes x 2 posts", price: 1.49, originalPrice: 1.99, discount: "25% OFF", color: "pink" },
+  //   { id: 2, label: "50 likes x 2 posts", price: 2.61, originalPrice: 3.49, discount: "25% OFF", color: "pink" },
+  //   { id: 3, label: "100 followers", price: 2.61, originalPrice: 3.49, discount: "25% OFF", color: "pink" },
+  //   { id: 4, label: "Profile Analysis", price: 4.99, originalPrice: 9.98, discount: "50% OFF", color: "pink" }
+  // ];
 
   // Handle adding offers to order
   const handleAddOffer = (offer) => {
@@ -391,7 +391,7 @@ const PaymentStep = ({ formData, onBack, setGeneralError }) => {
           </div>
 
           {/* Exclusive Offers */}
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+          {/* <div className="bg-white p-6 rounded-lg shadow-lg">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">EXCLUSIVE OFFERS</h4>
             <div className="space-y-4">
               {exclusiveOffers.map((offer) => {
@@ -448,7 +448,7 @@ const PaymentStep = ({ formData, onBack, setGeneralError }) => {
                 );
               })}
             </div>
-          </div>
+          </div> */}
 
           {/* Security & Guarantee */}
           <div className="bg-white p-6 rounded-lg shadow-lg">
