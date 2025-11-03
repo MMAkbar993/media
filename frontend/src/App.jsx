@@ -18,6 +18,7 @@ import Instagram from "./pages/Instagram"
 import Tiktok from "./pages/Tiktok"
 import FAQ from "./pages/FAQ"
 import AboutPage from "./pages/about-page"
+import AdminPanel from "./pages/AdminPanel"
 
 // Scroll to top component
 function ScrollToTop() {
@@ -67,6 +68,7 @@ function App() {
             <Route path="faq" element={<FAQ />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/admin" element={<AdminPanel />} />
       
 
           </Routes>

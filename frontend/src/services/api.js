@@ -243,6 +243,45 @@ class ApiService {
     if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
     return num.toString();
   }
+
+  // ------------------ Admin API ------------------
+  async getAdminOrders(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.status) params.append("status", filters.status);
+    if (filters.platform) params.append("platform", filters.platform);
+    if (filters.serviceType) params.append("serviceType", filters.serviceType);
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+    if (filters.search) params.append("search", filters.search);
+    
+    const queryString = params.toString();
+    return this.request(`/api/admin/orders${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getAdminClients(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.page) params.append("page", filters.page);
+    if (filters.limit) params.append("limit", filters.limit);
+    if (filters.search) params.append("search", filters.search);
+    
+    const queryString = params.toString();
+    return this.request(`/api/admin/clients${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getAdminClientDetails(userId) {
+    return this.request(`/api/admin/clients/${userId}`);
+  }
+
+  async updateOrderStatus(orderId, statusData) {
+    return this.request(`/api/admin/orders/${orderId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(statusData),
+    });
+  }
+
+  async getAdminDashboardStats() {
+    return this.request("/api/admin/dashboard/stats");
+  }
 }
 
 export default new ApiService();

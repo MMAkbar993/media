@@ -15,6 +15,7 @@ const servicesRoutes = require("./routes/services")
 const instagramRoutes = require("./routes/instagram")
 const tiktokRoutes = require("./routes/tiktok")
 const paymentRoutes = require("./routes/payment")
+const adminRoutes = require("./routes/admin")
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -65,6 +66,7 @@ app.use("/api/services", servicesRoutes)
 app.use("/api/instagram", instagramRoutes)
 app.use("/api/tiktok", tiktokRoutes)
 app.use("/api/payment", paymentRoutes)
+app.use("/api/admin", adminRoutes)
 
 // 404
 app.use("*", (req, res) => {
