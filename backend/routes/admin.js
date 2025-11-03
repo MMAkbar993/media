@@ -6,7 +6,8 @@ const bcrypt = require("bcryptjs")
 
 // Simple admin password authentication
 // In production, you should use a more secure method with user management
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123"
+let ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123"
+const ADMIN_RESET_CODE = process.env.ADMIN_RESET_CODE || "reset123"
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "admin_session_token_" + Date.now()
 
 // Store active sessions (in production, use Redis or a database)
@@ -106,11 +107,128 @@ const requireAdminAuth = (req, res, next) => {
   }
 }
 
+// Change password route (requires authentication)
+router.post("/change-password", requireAdminAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "Current password and new password are required",
+      })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: "New password must be at least 6 characters long",
+      })
+    }
+
+    // Verify current password
+    if (currentPassword !== ADMIN_PASSWORD) {
+      logger.warn("Password change failed - incorrect current password", {
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      })
+
+      return res.status(401).json({
+        success: false,
+        error: "Current password is incorrect",
+      })
+    }
+
+    // Update password
+    ADMIN_PASSWORD = newPassword
+    // In production, you would update this in a database or .env file
+
+    logger.info("Admin password changed successfully", {
+      ip: req.ip,
+      timestamp: new Date().toISOString(),
+    })
+
+    res.json({
+      success: true,
+      message: "Password changed successfully",
+    })
+  } catch (error) {
+    logger.error("Password change error", {
+      error: error.message,
+      stack: error.stack,
+    })
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to change password",
+    })
+  }
+})
+
+// Reset password route (public - requires reset code)
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { resetCode, newPassword } = req.body
+
+    if (!resetCode || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "Reset code and new password are required",
+      })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: "New password must be at least 6 characters long",
+      })
+    }
+
+    // Verify reset code
+    if (resetCode !== ADMIN_RESET_CODE) {
+      logger.warn("Password reset failed - incorrect reset code", {
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      })
+
+      return res.status(401).json({
+        success: false,
+        error: "Invalid reset code",
+      })
+    }
+
+    // Update password
+    ADMIN_PASSWORD = newPassword
+    // Clear all active sessions for security
+    adminSessions.clear()
+
+    logger.info("Admin password reset successfully", {
+      ip: req.ip,
+      timestamp: new Date().toISOString(),
+    })
+
+    res.json({
+      success: true,
+      message: "Password reset successfully. Please login with your new password.",
+    })
+  } catch (error) {
+    logger.error("Password reset error", {
+      error: error.message,
+      stack: error.stack,
+    })
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to reset password",
+    })
+  }
+})
+
 // Login and logout routes are public (not protected)
 // Protect all other admin routes with authentication
 router.use((req, res, next) => {
-  // Skip auth for login and logout routes
-  if (req.path === "/login" || req.path === "/logout") {
+  // Skip auth for login, logout, and reset-password routes
+  if (req.path === "/login" || req.path === "/logout" || req.path === "/reset-password") {
     return next()
   }
   requireAdminAuth(req, res, next)

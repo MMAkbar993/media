@@ -20,6 +20,7 @@ import FAQ from "./pages/FAQ"
 import AboutPage from "./pages/about-page"
 import AdminPanel from "./pages/AdminPanel"
 import AdminLogin from "./pages/AdminLogin"
+import AdminResetPassword from "./pages/AdminResetPassword"
 
 // Scroll to top component
 function ScrollToTop() {
@@ -70,6 +71,7 @@ function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/reset-password" element={<AdminResetPassword />} />
             <Route path="/admin" element={<AdminPanel />} />
       
 

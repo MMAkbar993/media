@@ -1,7 +1,7 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import apiService from "../services/api"
-import { Shield, Lock, AlertCircle, Loader } from "lucide-react"
+import { Shield, Lock, AlertCircle, Loader, Key } from "lucide-react"
 
 const AdminLogin = () => {
   const [password, setPassword] = useState("")
@@ -105,6 +105,17 @@ const AdminLogin = () => {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Forgot Password Link */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/admin/reset-password"
+              className="text-sm text-orange-600 hover:text-orange-700 flex items-center justify-center"
+            >
+              <Key className="w-4 h-4 mr-1" />
+              Forgot Password? Reset here
+            </Link>
           </div>
         </div>
 

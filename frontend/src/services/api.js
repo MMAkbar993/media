@@ -326,6 +326,20 @@ class ApiService {
     }
   }
 
+  async changeAdminPassword(currentPassword, newPassword) {
+    return this.request("/api/admin/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  async resetAdminPassword(resetCode, newPassword) {
+    return this.request("/api/admin/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ resetCode, newPassword }),
+    });
+  }
+
   // Helper method to get admin token
   getAdminToken() {
     return localStorage.getItem("adminToken");
