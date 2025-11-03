@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import apiService from "../services/api"
 import {
   Package,
@@ -20,9 +21,11 @@ import {
   Phone,
   Calendar,
   ExternalLink,
+  LogOut,
 } from "lucide-react"
 
 const AdminPanel = () => {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("orders") // 'orders' or 'clients'
   const [orders, setOrders] = useState([])
   const [clients, setClients] = useState([])
@@ -59,10 +62,43 @@ const AdminPanel = () => {
   const [ordersPagination, setOrdersPagination] = useState(null)
   const [clientsPagination, setClientsPagination] = useState(null)
 
-  // Fetch dashboard stats
+  // Check authentication on mount
   useEffect(() => {
+    const token = apiService.getAdminToken()
+    if (!token) {
+      navigate("/admin/login")
+      return
+    }
     fetchDashboardStats()
-  }, [])
+  }, [navigate])
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiService.adminLogout()
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      localStorage.removeItem("adminToken")
+      navigate("/admin/login")
+    }
+  }
+
+  // Fetch dashboard stats
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await apiService.getAdminDashboardStats()
+      if (response.success) {
+        setDashboardStats(response.stats)
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard stats:", error)
+      // If unauthorized, redirect to login
+      if (error.message && error.message.includes("401")) {
+        navigate("/admin/login")
+      }
+    }
+  }
 
   // Fetch orders when filters change
   useEffect(() => {
@@ -77,17 +113,6 @@ const AdminPanel = () => {
       fetchClients()
     }
   }, [activeTab, clientFilters])
-
-  const fetchDashboardStats = async () => {
-    try {
-      const response = await apiService.getAdminDashboardStats()
-      if (response.success) {
-        setDashboardStats(response.stats)
-      }
-    } catch (error) {
-      console.error("Failed to fetch dashboard stats:", error)
-    }
-  }
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -211,9 +236,18 @@ const AdminPanel = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Manage orders and clients</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+            <p className="text-gray-600">Manage orders and clients</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </button>
         </div>
 
         {/* Dashboard Stats */}

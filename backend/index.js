@@ -28,7 +28,7 @@ const corsOptions = {
   origin: process.env.NODE_ENV === "production" 
     ? ["https://hypeis.us", "https://www.hypeis.us"]
     : ["http://localhost:4173", "http://127.0.0.1:4173", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }

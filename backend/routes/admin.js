@@ -2,6 +2,119 @@ const express = require("express")
 const router = express.Router()
 const db = require("../config/database")
 const logger = require("../utils/logger")
+const bcrypt = require("bcryptjs")
+
+// Simple admin password authentication
+// In production, you should use a more secure method with user management
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123"
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "admin_session_token_" + Date.now()
+
+// Store active sessions (in production, use Redis or a database)
+const adminSessions = new Set()
+
+// Admin login route
+router.post("/login", async (req, res) => {
+  try {
+    const { password } = req.body
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        error: "Password is required",
+      })
+    }
+
+    // Simple password check (in production, use hashed passwords from database)
+    if (password === ADMIN_PASSWORD) {
+      const sessionToken = `${ADMIN_TOKEN}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      adminSessions.add(sessionToken)
+
+      logger.info("Admin login successful", {
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      })
+
+      res.json({
+        success: true,
+        token: sessionToken,
+        message: "Login successful",
+      })
+    } else {
+      logger.warn("Admin login failed - incorrect password", {
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+      })
+
+      res.status(401).json({
+        success: false,
+        error: "Invalid password",
+      })
+    }
+  } catch (error) {
+    logger.error("Admin login error", {
+      error: error.message,
+      stack: error.stack,
+    })
+
+    res.status(500).json({
+      success: false,
+      error: "Login failed",
+    })
+  }
+})
+
+// Admin logout route
+router.post("/logout", (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "")
+
+    if (token && adminSessions.has(token)) {
+      adminSessions.delete(token)
+      logger.info("Admin logout successful")
+    }
+
+    res.json({
+      success: true,
+      message: "Logout successful",
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Logout failed",
+    })
+  }
+})
+
+// Middleware to check admin authentication
+const requireAdminAuth = (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "")
+
+    if (!token || !adminSessions.has(token)) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - Admin authentication required",
+      })
+    }
+
+    next()
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      error: "Unauthorized",
+    })
+  }
+}
+
+// Login and logout routes are public (not protected)
+// Protect all other admin routes with authentication
+router.use((req, res, next) => {
+  // Skip auth for login and logout routes
+  if (req.path === "/login" || req.path === "/logout") {
+    return next()
+  }
+  requireAdminAuth(req, res, next)
+})
 
 // Get all orders with client information
 router.get("/orders", async (req, res) => {

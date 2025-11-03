@@ -17,11 +17,22 @@ class ApiService {
   // ------------------ Core API Request ------------------
   async request(endpoint, options = {}, retries = 2) {
     const url = `${this.baseURL}${endpoint}`;
+    
+    // Add admin token if it's an admin route
+    const headers = {
+      "Content-Type": "application/json",
+      ...options.headers,
+    };
+    
+    if (endpoint.startsWith("/api/admin") && !endpoint.includes("/login")) {
+      const token = this.getAdminToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+    
     const config = {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
+      headers,
       ...options,
     };
 
@@ -34,6 +45,14 @@ class ApiService {
       const data = await res.json();
 
       if (!res.ok) {
+        // Handle unauthorized - clear token and redirect
+        if (res.status === 401 && endpoint.startsWith("/api/admin")) {
+          localStorage.removeItem("adminToken");
+          // Redirect to login if we're not already there
+          if (!window.location.pathname.includes("/admin/login")) {
+            window.location.href = "/admin/login";
+          }
+        }
         throw new Error(data.message || data.error || `HTTP ${res.status}`);
       }
 
@@ -281,6 +300,35 @@ class ApiService {
 
   async getAdminDashboardStats() {
     return this.request("/api/admin/dashboard/stats");
+  }
+
+  async adminLogin(password) {
+    return this.request("/api/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  async adminLogout() {
+    const token = localStorage.getItem("adminToken");
+    try {
+      const response = await this.request("/api/admin/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      localStorage.removeItem("adminToken");
+      return response;
+    } catch (error) {
+      localStorage.removeItem("adminToken");
+      throw error;
+    }
+  }
+
+  // Helper method to get admin token
+  getAdminToken() {
+    return localStorage.getItem("adminToken");
   }
 }
 
