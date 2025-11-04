@@ -5,14 +5,13 @@ const db = require("../config/database")
 
 class FiveApiService {
   constructor() {
-    this.baseURL = process.env.FIVE_API_URL || "https://fivebbc.com/api"
+    this.baseURL = process.env.FIVE_API_URL || "https://fivebbc.com/api/v2"
     this.apiKey = process.env.FIVE_API_KEY || "154ffa007fce84ac28fa39a6c799461f"
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
     })
 
@@ -53,7 +52,11 @@ class FiveApiService {
 
   async getServices() {
     try {
-      const response = await this.client.get("/services")
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        action: "services",
+      })
+      const response = await this.client.post("", params.toString())
       return response.data
     } catch (error) {
       logger.error("Failed to fetch services from Five API:", error)
@@ -72,13 +75,15 @@ class FiveApiService {
       }
 
       // Prepare API request
-      const apiRequest = {
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        action: "add",
         service: serviceConfig.five_api_service_id,
         link: targetUrl,
-        quantity: quantity,
-      }
+        quantity: quantity.toString(),
+      })
 
-      const response = await this.client.post("/add", apiRequest)
+      const response = await this.client.post("", params.toString())
 
       if (response.data.error) {
         // Check if it's a service ID error
@@ -91,12 +96,15 @@ class FiveApiService {
 
           // Try backup service ID if available
           if (serviceConfig.five_api_service_id_backup) {
-            const backupRequest = {
-              ...apiRequest,
+            const backupParams = new URLSearchParams({
+              key: this.apiKey,
+              action: "add",
               service: serviceConfig.five_api_service_id_backup,
-            }
+              link: targetUrl,
+              quantity: quantity.toString(),
+            })
 
-            const backupResponse = await this.client.post("/add", backupRequest)
+            const backupResponse = await this.client.post("", backupParams.toString())
 
             if (!backupResponse.data.error) {
               // Backup worked, send alert to developers
@@ -135,13 +143,46 @@ class FiveApiService {
 
   async getOrderStatus(fiveApiOrderId) {
     try {
-      const response = await this.client.post("/status", {
-        order: fiveApiOrderId,
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        action: "status",
+        order: fiveApiOrderId.toString(),
       })
+      const response = await this.client.post("", params.toString())
 
       return response.data
     } catch (error) {
       logger.error("Failed to get order status from Five API:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Get status for multiple orders at once (up to 100 orders)
+   * @param {string[]} fiveApiOrderIds - Array of Five API order IDs
+   * @returns {Promise<Object>} Object with order IDs as keys and status as values
+   */
+  async getMultipleOrderStatuses(fiveApiOrderIds) {
+    try {
+      if (!Array.isArray(fiveApiOrderIds) || fiveApiOrderIds.length === 0) {
+        throw new Error("Order IDs array is required and cannot be empty")
+      }
+
+      if (fiveApiOrderIds.length > 100) {
+        throw new Error("Maximum 100 order IDs allowed per request")
+      }
+
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        action: "status",
+        orders: fiveApiOrderIds.join(","),
+      })
+
+      const response = await this.client.post("", params.toString())
+
+      return response.data
+    } catch (error) {
+      logger.error("Failed to get multiple order statuses from Five API:", error)
       throw error
     }
   }

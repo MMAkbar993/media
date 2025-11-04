@@ -115,42 +115,69 @@ statusCheckQueue.process("check-order-status", async (job) => {
   try {
     logger.info("Checking order status", { orderId, fiveApiOrderId })
 
+    // Get order to access original quantity
+    const order = await db("orders").where({ id: orderId }).first()
+    if (!order) {
+      throw new Error("Order not found")
+    }
+
     // Get current status from Five API
     const statusResponse = await fiveApiService.getOrderStatus(fiveApiOrderId)
+
+    // Handle error responses
+    if (statusResponse.error) {
+      logger.warn("Error in status response", {
+        orderId,
+        fiveApiOrderId,
+        error: statusResponse.error,
+      })
+      // Schedule retry in 15 minutes
+      await statusCheckQueue.add("check-order-status", { orderId, fiveApiOrderId }, { delay: 15 * 60 * 1000 })
+      return
+    }
 
     // Update order based on status
     const updateData = {
       five_api_response: JSON.stringify(statusResponse),
+      updated_at: new Date(),
     }
 
     let shouldScheduleNextCheck = false
     let nextCheckDelay = 5 * 60 * 1000 // 5 minutes default
+    const orderQuantity = order.quantity
+    const remains = statusResponse.remains ? parseInt(statusResponse.remains) : 0
 
     switch (statusResponse.status) {
       case "Completed":
         updateData.status = "completed"
         updateData.completed_at = new Date()
-        updateData.delivered_quantity = statusResponse.remains
-          ? Number.parseInt(statusResponse.quantity) - Number.parseInt(statusResponse.remains)
-          : Number.parseInt(statusResponse.quantity)
+        updateData.delivered_quantity = Math.max(0, orderQuantity - remains)
         updateData.completion_percentage = 100
         break
 
       case "Partial":
         updateData.status = "partial"
-        updateData.delivered_quantity = statusResponse.remains
-          ? Number.parseInt(statusResponse.quantity) - Number.parseInt(statusResponse.remains)
+        updateData.delivered_quantity = Math.max(0, orderQuantity - remains)
+        updateData.completion_percentage = remains > 0
+          ? ((orderQuantity - remains) / orderQuantity) * 100
           : 0
-        updateData.completion_percentage = statusResponse.remains
-          ? ((Number.parseInt(statusResponse.quantity) - Number.parseInt(statusResponse.remains)) /
-              Number.parseInt(statusResponse.quantity)) *
-            100
-          : 0
+        shouldScheduleNextCheck = true
+        nextCheckDelay = 10 * 60 * 1000 // Check every 10 minutes for partial orders
         break
 
       case "Processing":
       case "In progress":
         updateData.status = "in_progress"
+        if (!order.started_at) {
+          updateData.started_at = new Date()
+        }
+        if (statusResponse.start_count) {
+          const startCount = parseInt(statusResponse.start_count)
+          updateData.delivered_quantity = Math.max(0, orderQuantity - remains)
+          updateData.completion_percentage = remains > 0
+            ? ((orderQuantity - remains) / orderQuantity) * 100
+            : 0
+        }
         shouldScheduleNextCheck = true
         nextCheckDelay = 10 * 60 * 1000 // Check every 10 minutes for in-progress orders
         break
@@ -162,6 +189,7 @@ statusCheckQueue.process("check-order-status", async (job) => {
         break
 
       case "Canceled":
+      case "Cancelled":
         updateData.status = "cancelled"
         break
 
@@ -183,6 +211,7 @@ statusCheckQueue.process("check-order-status", async (job) => {
       event_type: "status_updated",
       message: `Order status updated to: ${updateData.status}`,
       metadata: JSON.stringify(statusResponse),
+      created_at: new Date(),
     })
 
     // Schedule next check if needed

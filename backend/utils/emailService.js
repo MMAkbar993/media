@@ -9,6 +9,18 @@ const EMAILJS_TEMPLATE_ID_ADMIN = process.env.EMAILJS_TEMPLATE_ID_ADMIN
 const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY // aka user_id
 const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY // optional, used as Bearer in Authorization
 
+// Normalize base URL to remove trailing slashes and /api/v1.0/email if present
+function normalizeEmailJSBase(baseUrl) {
+  if (!baseUrl) return "https://api.emailjs.com"
+  // Remove trailing slash
+  let normalized = baseUrl.replace(/\/+$/, "")
+  // Remove /api/v1.0/email if it exists at the end
+  normalized = normalized.replace(/\/api\/v1\.0\/email\/?$/, "")
+  return normalized
+}
+
+const NORMALIZED_EMAILJS_BASE = normalizeEmailJSBase(EMAILJS_API_BASE)
+
 // Utility to post to EmailJS REST API
 async function sendViaEmailJS({ templateId, templateParams }) {
   const headers = {
@@ -20,7 +32,12 @@ async function sendViaEmailJS({ templateId, templateParams }) {
   if (EMAILJS_PRIVATE_KEY) {
     headers["Authorization"] = `Bearer ${EMAILJS_PRIVATE_KEY}`
   }
-  const res = await fetch(`${EMAILJS_API_BASE}/api/v1.0/email/send`, {
+  
+  // Construct the URL properly
+  const emailUrl = `${NORMALIZED_EMAILJS_BASE}/api/v1.0/email/send`
+  console.log("[v0] EmailJS URL:", emailUrl)
+  
+  const res = await fetch(emailUrl, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -58,6 +75,8 @@ class EmailService {
     if (this.useEmailJS) {
       console.log("[v0] EmailJS configured:", {
         base: EMAILJS_API_BASE,
+        normalizedBase: NORMALIZED_EMAILJS_BASE,
+        fullUrl: `${NORMALIZED_EMAILJS_BASE}/api/v1.0/email/send`,
         hasServiceId: !!EMAILJS_SERVICE_ID,
         hasUserKey: !!EMAILJS_PUBLIC_KEY,
         hasPrivateKey: !!EMAILJS_PRIVATE_KEY,
