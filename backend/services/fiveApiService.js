@@ -5,8 +5,38 @@ const db = require("../config/database")
 
 class FiveApiService {
   constructor() {
-    this.baseURL = process.env.FIVE_API_URL || "https://fivebbc.com/api/v2"
-    this.apiKey = process.env.FIVE_API_KEY || "154ffa007fce84ac28fa39a6c799461f"
+    // Use environment variables if set, otherwise use correct defaults
+    const envUrl = process.env.FIVE_API_URL
+    const envKey = process.env.FIVE_API_KEY
+    
+    // Default to correct Five BBC API URL and key
+    this.baseURL = envUrl || "https://fivebbc.com/api/v2"
+    this.apiKey = envKey || "12aafc34750fd3ea84245a727bd131d5"
+    
+    // Warn if incorrect URL is being used
+    if (envUrl && envUrl.includes("api.five.com")) {
+      logger.warn("⚠️  FIVE_API_URL appears to be incorrect. Using correct URL instead.", {
+        provided: envUrl,
+        using: "https://fivebbc.com/api/v2",
+      })
+      this.baseURL = "https://fivebbc.com/api/v2"
+    }
+    
+    // Warn if test key is being used
+    if (envKey && (envKey === "test-key" || envKey.length < 20)) {
+      logger.warn("⚠️  FIVE_API_KEY appears to be incorrect. Using correct key instead.", {
+        provided: envKey ? `${envKey.substring(0, 4)}...` : "empty",
+        using: "12aafc34750fd3ea84245a727bd131d5",
+      })
+      this.apiKey = "12aafc34750fd3ea84245a727bd131d5"
+    }
+    
+    logger.info("Five BBC API Service initialized", {
+      baseURL: this.baseURL,
+      apiKeyLength: this.apiKey ? this.apiKey.length : 0,
+      apiKeyPrefix: this.apiKey ? `${this.apiKey.substring(0, 8)}...` : "none",
+    })
+    
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,

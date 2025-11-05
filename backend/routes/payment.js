@@ -1,7 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const Stripe = require("stripe");
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const logger = require("../utils/logger");
+
+// Initialize Stripe only if API key is provided
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  try {
+    stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+    logger.info("Stripe initialized successfully");
+  } catch (error) {
+    logger.warn("Failed to initialize Stripe", { error: error.message });
+  }
+} else {
+  logger.warn("Stripe secret key not provided. Stripe payment methods will be disabled.");
+}
 
 // --- PayPal SDK Setup ---
 const paypal = require("@paypal/checkout-server-sdk");
@@ -12,6 +25,12 @@ const paypalClient = new paypal.core.PayPalHttpClient(paypalEnv);
 
 // Stripe: Create PaymentIntent
 router.post("/create-intent", async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: "Stripe is not configured. Please provide STRIPE_SECRET_KEY in environment variables." 
+    });
+  }
+  
   try {
     const { amount, currency = "usd" } = req.body;
     if (!amount) return res.status(400).json({ error: "Amount is required" });

@@ -235,19 +235,153 @@ router.post("/", async (req, res) => {
   }
 })
 
-// Get order by ID or order number
+// Get order by ID or order number or Five BBC order ID
 router.get("/:identifier", async (req, res) => {
   try {
     const { identifier } = req.params
 
-    // Check if identifier is UUID (order ID) or order number
+    // Check if identifier is UUID (order ID), order number, or Five BBC order ID
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier)
+    const isOrderNumber = identifier && identifier.startsWith("ORD-")
+    const isFiveApiOrderId = /^\d+$/.test(identifier) // Numeric ID (Five BBC order ID)
+    
+    logger.info("Order lookup request", {
+      identifier,
+      isUUID,
+      isOrderNumber,
+      isFiveApiOrderId,
+    })
 
-    const order = await db("orders")
-      .leftJoin("users", "orders.user_id", "users.id")
-      .select("orders.*", "users.email")
-      .where(isUUID ? "orders.id" : "orders.order_number", identifier)
-      .first()
+    let order
+
+    if (isUUID) {
+      // Search by local order UUID
+      order = await db("orders")
+        .leftJoin("users", "orders.user_id", "users.id")
+        .select("orders.*", "users.email")
+        .where("orders.id", identifier)
+        .first()
+    } else if (isOrderNumber) {
+      // Search by local order number (ORD-...)
+      order = await db("orders")
+        .leftJoin("users", "orders.user_id", "users.id")
+        .select("orders.*", "users.email")
+        .where("orders.order_number", identifier)
+        .first()
+    } else if (isFiveApiOrderId) {
+      // Search by Five BBC API order ID
+      logger.info("Searching by Five BBC order ID", { identifier })
+      order = await db("orders")
+        .leftJoin("users", "orders.user_id", "users.id")
+        .select("orders.*", "users.email")
+        .where("orders.five_api_order_id", identifier)
+        .first()
+      
+      // If not found in database, try to fetch from Five BBC API directly
+      if (!order) {
+        logger.info("Order not found in database, fetching from Five BBC API", { identifier })
+        try {
+          const fiveApiService = require("../services/fiveApiService")
+          logger.info("Fetching order status from Five BBC API", { identifier })
+          const statusResponse = await fiveApiService.getOrderStatus(identifier)
+          logger.info("Five BBC API response received", { identifier, status: statusResponse.status })
+          
+          if (statusResponse.error) {
+            throw new Error(statusResponse.error)
+          }
+          
+          // Map Five BBC status to our internal status
+          let mappedStatus = "unknown"
+          if (statusResponse.status === "Completed") {
+            mappedStatus = "completed"
+          } else if (statusResponse.status === "Partial") {
+            mappedStatus = "partial"
+          } else if (statusResponse.status === "In progress" || statusResponse.status === "Processing") {
+            mappedStatus = "in_progress"
+          } else if (statusResponse.status === "Pending") {
+            mappedStatus = "processing"
+          } else if (statusResponse.status === "Canceled" || statusResponse.status === "Cancelled") {
+            mappedStatus = "cancelled"
+          }
+          
+          // Calculate delivered quantity and completion percentage
+          // For Five BBC API: start_count is the count before order, remains is what's left
+          // So delivered = original quantity - remains
+          // If status is Completed, remains should be 0
+          const startCount = parseInt(statusResponse.start_count || 0)
+          const remains = parseInt(statusResponse.remains || 0)
+          
+          // Try to infer original quantity from start_count + remains (if remains > 0)
+          // Or use start_count as delivered if status is Completed
+          let totalQuantity = 0
+          let deliveredQuantity = 0
+          
+          if (statusResponse.status === "Completed") {
+            // If completed, start_count likely represents the delivered amount
+            deliveredQuantity = startCount
+            totalQuantity = startCount // Or we could use startCount + remains but remains should be 0
+          } else if (remains > 0) {
+            // If partial, original quantity = start_count + delivered + remains
+            // We'll use start_count as baseline and calculate from remains
+            totalQuantity = startCount + remains
+            deliveredQuantity = startCount
+          } else {
+            // Fallback
+            deliveredQuantity = startCount
+            totalQuantity = startCount
+          }
+          
+          const completionPercentage = totalQuantity > 0 
+            ? ((deliveredQuantity / totalQuantity) * 100) 
+            : (statusResponse.status === "Completed" ? 100 : 0)
+          
+          // Return the Five BBC API response even if not in our database
+          return res.json({
+            success: true,
+            order: {
+              id: null, // Not in local database
+              order_number: `FIVE-${identifier}`, // Generate a display order number
+              five_api_order_id: identifier,
+              status: mappedStatus,
+              delivered_quantity: deliveredQuantity,
+              completion_percentage: Math.round(completionPercentage * 100) / 100,
+              charge: statusResponse.charge,
+              currency: statusResponse.currency || "USD",
+              remains: remains,
+              start_count: startCount,
+              quantity: totalQuantity || deliveredQuantity,
+              amount: parseFloat(statusResponse.charge || 0),
+              five_api_response: statusResponse,
+              note: "This order exists in Five BBC but not in our local database. Some details may be limited.",
+              created_at: null,
+              updated_at: new Date().toISOString(),
+            },
+            logs: [
+              {
+                event: "status_checked",
+                message: `Order status checked from Five BBC API: ${statusResponse.status}`,
+                timestamp: new Date().toISOString(),
+              },
+            ],
+          })
+        } catch (apiError) {
+          logger.error("Order not found in database and Five API lookup failed", {
+            identifier,
+            error: apiError.message,
+            stack: apiError.stack,
+          })
+          // Continue to return 404 below
+        }
+      }
+    } else {
+      // Try all fields as fallback
+      order = await db("orders")
+        .leftJoin("users", "orders.user_id", "users.id")
+        .select("orders.*", "users.email")
+        .where("orders.order_number", identifier)
+        .orWhere("orders.five_api_order_id", identifier)
+        .first()
+    }
 
     if (!order) {
       return res.status(404).json({
