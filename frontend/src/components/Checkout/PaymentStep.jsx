@@ -219,12 +219,30 @@ const PaymentStep = ({ formData, onBack, setGeneralError }) => {
         return;
       }
 
+      // Validate minimum quantity per post (Five API requires minimum 100 per post)
+      const numPosts = formData.selectedPostIds?.length || 1;
+      const totalQuantity = Number.parseInt(formData.quantity);
+      const quantityPerPost = Math.floor(totalQuantity / numPosts);
+      const MIN_QUANTITY_PER_POST = 100;
+      
+      // Only validate for likes, views, and comments (services that can be split across posts)
+      const servicesRequiringMin = ["likes", "views", "comments"];
+      if (numPosts > 1 && servicesRequiringMin.includes(formData.serviceType?.toLowerCase()) && quantityPerPost < MIN_QUANTITY_PER_POST) {
+        const minTotalQuantity = numPosts * MIN_QUANTITY_PER_POST;
+        setGeneralError(
+          `Each post must receive at least ${MIN_QUANTITY_PER_POST} ${formData.serviceType}. ` +
+          `With ${numPosts} post(s) selected, you need a minimum total of ${minTotalQuantity} ${formData.serviceType}. ` +
+          `Currently: ${quantityPerPost} per post (${totalQuantity} total). Please go back and increase your quantity.`
+        );
+        return;
+      }
+
       // Create order after successful payment
       const orderPayload = {
         platform: formData.platform,
         serviceType: formData.serviceType,
         targetUrl: formData.targetUrl,
-        quantity: Number.parseInt(formData.quantity),
+        quantity: totalQuantity,
         email: formData.email,
       };
 
@@ -352,7 +370,20 @@ const PaymentStep = ({ formData, onBack, setGeneralError }) => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="font-medium text-gray-900">{formData.quantity} {formData.serviceType}</p>
-                    <p className="text-sm text-gray-500">{Math.floor(formData.quantity / (formData.selectedPostIds?.length || 1))} {formData.serviceType} / {formData.selectedPostIds?.length || 0} posts</p>
+                    <p className="text-sm text-gray-500">
+                      {Math.floor(formData.quantity / (formData.selectedPostIds?.length || 1))} {formData.serviceType} / {formData.selectedPostIds?.length || 0} posts
+                    </p>
+                    {formData.selectedPostIds?.length > 1 && (
+                      <p className={`text-xs mt-1 ${
+                        Math.floor(formData.quantity / formData.selectedPostIds.length) < 100 
+                          ? "text-red-600 font-semibold" 
+                          : "text-gray-400"
+                      }`}>
+                        {Math.floor(formData.quantity / formData.selectedPostIds.length) < 100 
+                          ? "⚠️ Minimum 100 per post required"
+                          : "✓ Meets minimum requirement"}
+                      </p>
+                    )}
                   </div>
                   <span className="font-semibold text-gray-900">${formData.price}</span>
                 </div>

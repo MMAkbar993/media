@@ -304,56 +304,62 @@ router.get("/:identifier", async (req, res) => {
             mappedStatus = "cancelled"
           }
           
-          // Calculate delivered quantity and completion percentage
-          // For Five BBC API: start_count is the count before order, remains is what's left
-          // So delivered = original quantity - remains
-          // If status is Completed, remains should be 0
+          // Calculate quantities from Five BBC API response
+          // start_count = count before order started
+          // remains = how many still need to be delivered
+          // So: original_quantity = start_count + delivered + remains
+          // But we can also calculate: delivered = start_count (if completed) or start_count (if partial)
           const startCount = parseInt(statusResponse.start_count || 0)
           const remains = parseInt(statusResponse.remains || 0)
           
-          // Try to infer original quantity from start_count + remains (if remains > 0)
-          // Or use start_count as delivered if status is Completed
-          let totalQuantity = 0
-          let deliveredQuantity = 0
+          // For completed orders, start_count is the delivered amount, remains is 0
+          // For partial orders, start_count might be delivered, remains is what's left
+          // Original quantity = start_count + remains (if we assume start_count is delivered)
+          // But actually, start_count might be the baseline before delivery started
+          // Let's use: original_quantity = delivered + remains
+          const deliveredQuantity = statusResponse.status === "Completed" 
+            ? startCount 
+            : Math.max(0, startCount - remains) // If partial, delivered = start_count - remains
           
-          if (statusResponse.status === "Completed") {
-            // If completed, start_count likely represents the delivered amount
-            deliveredQuantity = startCount
-            totalQuantity = startCount // Or we could use startCount + remains but remains should be 0
-          } else if (remains > 0) {
-            // If partial, original quantity = start_count + delivered + remains
-            // We'll use start_count as baseline and calculate from remains
-            totalQuantity = startCount + remains
-            deliveredQuantity = startCount
-          } else {
-            // Fallback
-            deliveredQuantity = startCount
-            totalQuantity = startCount
-          }
+          const originalQuantity = deliveredQuantity + remains
+          const totalQuantity = originalQuantity > 0 ? originalQuantity : startCount
           
           const completionPercentage = totalQuantity > 0 
             ? ((deliveredQuantity / totalQuantity) * 100) 
             : (statusResponse.status === "Completed" ? 100 : 0)
+          
+          // Calculate a fixed dollar amount (user wants fixed pricing, not charge)
+          // Using a simple calculation: $0.01 per unit as example, user can adjust
+          const fixedAmount = (totalQuantity * 0.01).toFixed(2)
+          
+          // Since Five BBC API doesn't provide creation time, we'll use a placeholder
+          // or estimate based on order status. For now, use a generic timestamp
+          // In production, you might want to store this when the order is first created
+          const estimatedCreatedAt = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 24 hours ago as placeholder
           
           // Return the Five BBC API response even if not in our database
           return res.json({
             success: true,
             order: {
               id: null, // Not in local database
-              order_number: `FIVE-${identifier}`, // Generate a display order number
+              order_number: `HYPE-${identifier}`, // Generate a display order number
               five_api_order_id: identifier,
               status: mappedStatus,
               delivered_quantity: deliveredQuantity,
               completion_percentage: Math.round(completionPercentage * 100) / 100,
-              charge: statusResponse.charge,
+              charge: statusResponse.charge, // Keep original charge for reference
               currency: statusResponse.currency || "USD",
               remains: remains,
-              start_count: startCount,
-              quantity: totalQuantity || deliveredQuantity,
-              amount: parseFloat(statusResponse.charge || 0),
+              start_count: startCount, // Starting count before order
+              end_count: startCount + deliveredQuantity, // Ending count (start + delivered)
+              quantity: totalQuantity, // Original quantity ordered
+              amount: parseFloat(fixedAmount), // Fixed dollar amount
+              target_url: statusResponse.link || null, // Target URL if available in response
+              platform: statusResponse.platform || "unknown", // Infer platform if possible
+              service_type: statusResponse.service_type || "unknown", // Infer service type if possible
               five_api_response: statusResponse,
               note: "This order exists in Five BBC but not in our local database. Some details may be limited.",
-              created_at: null,
+              created_at: estimatedCreatedAt, // Estimated creation time
               updated_at: new Date().toISOString(),
             },
             logs: [

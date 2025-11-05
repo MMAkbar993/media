@@ -37,7 +37,6 @@ const CheckoutSummaryCard = ({ formData, onContinue, isContinueDisabled = false,
   }
 
   const upsellOptions = [
-    { label: "Add 50 Likes", price: "1.99", originalPrice: "3.49", save: "25%" },
     { label: "Add 100 Likes", price: "2.61", originalPrice: "3.49", save: "25%" },
     { label: "Add 100 Followers", price: "2.61", originalPrice: "3.49", save: "25%" },
   ]
@@ -93,6 +92,17 @@ const CheckoutSummaryCard = ({ formData, onContinue, isContinueDisabled = false,
             <p className="text-sm text-gray-500">
               {Math.floor(formData.quantity / (formData.selectedPostIds?.length || 1))} {getServiceTitle(formData.serviceType)} / {formData.selectedPostIds?.length || 0} posts
             </p>
+            {formData.selectedPostIds?.length > 1 && (
+              <p className={`text-xs mt-1 ${
+                Math.floor(formData.quantity / formData.selectedPostIds.length) < 100 
+                  ? "text-red-600 font-semibold" 
+                  : "text-gray-400"
+              }`}>
+                {Math.floor(formData.quantity / formData.selectedPostIds.length) < 100 
+                  ? "⚠️ Minimum 100 per post required"
+                  : "✓ Meets minimum requirement"}
+              </p>
+            )}
           </div>
         </div>
         <button className="text-sm text-blue-600 hover:underline focus:outline-none">

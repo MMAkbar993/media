@@ -153,16 +153,22 @@ const TrackOrder = () => {
   }
 
   const formatTimeElapsed = (createdAt) => {
+    if (!createdAt) return "Unknown"
+    
     const now = new Date()
     const created = new Date(createdAt)
     const diffMs = now - created
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
     
-    if (diffHours > 0) {
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ${diffHours}h ago`
+    } else if (diffHours > 0) {
       return `${diffHours}h ${diffMinutes}m ago`
+    } else {
+      return `${diffMinutes}m ago`
     }
-    return `${diffMinutes}m ago`
   }
 
   const ModernOrderTracker = ({ order }) => {
@@ -302,47 +308,61 @@ const TrackOrder = () => {
         <div className="border-t border-gray-100 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Delivery Stats */}
-            {order.delivered_quantity > 0 && (
-              <div className="bg-green-50 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2 flex items-center">
-                  <Package className="w-4 h-4 mr-2" />
-                  Delivery Progress
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-700">Delivered:</span>
-                    <span className="font-medium text-green-900">
-                      {order.delivered_quantity?.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-green-700">Total Ordered:</span>
-                    <span className="font-medium text-green-900">
-                      {order.quantity?.toLocaleString()}
-                    </span>
-                  </div>
+            <div className="bg-green-50 rounded-lg p-4">
+              <h4 className="font-medium text-green-900 mb-2 flex items-center">
+                <Package className="w-4 h-4 mr-2" />
+                Delivery Progress
+              </h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-700">Start Count:</span>
+                  <span className="font-medium text-green-900">
+                    {order.start_count?.toLocaleString() || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-700">Delivered:</span>
+                  <span className="font-medium text-green-900">
+                    {order.delivered_quantity?.toLocaleString() || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-700">End Count:</span>
+                  <span className="font-medium text-green-900">
+                    {order.end_count?.toLocaleString() || order.start_count?.toLocaleString() || "N/A"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-700">Total Ordered:</span>
+                  <span className="font-medium text-green-900">
+                    {order.quantity?.toLocaleString() || 0}
+                  </span>
+                </div>
+                {order.quantity > 0 && (
                   <div className="w-full bg-green-200 rounded-full h-2 mt-2">
                     <div
                       className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(order.delivered_quantity / order.quantity) * 100}%` }}
+                      style={{ width: `${Math.min((order.delivered_quantity / order.quantity) * 100, 100)}%` }}
                     />
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Target URL */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">Target URL</h4>
-              <a
-                href={order.target_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-orange-500 hover:text-orange-600 text-sm break-all underline"
-              >
-                {order.target_url}
-              </a>
-            </div>
+            {order.target_url && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">Target URL</h4>
+                <a
+                  href={order.target_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-orange-500 hover:text-orange-600 text-sm break-all underline"
+                >
+                  {order.target_url}
+                </a>
+              </div>
+            )}
           </div>
         </div>
 

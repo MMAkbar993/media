@@ -49,6 +49,24 @@ const TikTokSelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
   };
 
   const handleSubmit = () => {
+    // Validate minimum quantity per post (Five API requires minimum 100 per post)
+    const numPosts = selectedPosts.length;
+    const totalQuantity = formData.quantity || 0;
+    const quantityPerPost = Math.floor(totalQuantity / numPosts);
+    const MIN_QUANTITY_PER_POST = 100;
+    
+    // Only validate for likes, views, and comments (services that can be split across posts)
+    const servicesRequiringMin = ["likes", "views", "comments"];
+    if (numPosts > 1 && servicesRequiringMin.includes(formData.serviceType?.toLowerCase()) && quantityPerPost < MIN_QUANTITY_PER_POST) {
+      const minTotalQuantity = numPosts * MIN_QUANTITY_PER_POST;
+      alert(
+        `Each post must receive at least ${MIN_QUANTITY_PER_POST} ${formData.serviceType}. ` +
+        `With ${numPosts} post(s) selected, you need a minimum total of ${minTotalQuantity} ${formData.serviceType}. ` +
+        `Currently: ${quantityPerPost} per post (${totalQuantity} total).`
+      );
+      return;
+    }
+
     // Build a canonical TikTok URL from the first selected video and username
     const firstSelected = selectedPosts[0];
     let username = formData.username;

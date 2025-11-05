@@ -87,6 +87,22 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
   }
 
   const handleSubmit = () => {
+    // Validate minimum quantity per post (Five API requires minimum 100 per post)
+    const numPosts = selectedPosts.length
+    const totalQuantity = formData.quantity || 0
+    const quantityPerPost = Math.floor(totalQuantity / numPosts)
+    const MIN_QUANTITY_PER_POST = 100
+    
+    if (numPosts > 1 && quantityPerPost < MIN_QUANTITY_PER_POST) {
+      const minTotalQuantity = numPosts * MIN_QUANTITY_PER_POST
+      alert(
+        `Each post must receive at least ${MIN_QUANTITY_PER_POST} ${formData.serviceType}. ` +
+        `With ${numPosts} post(s) selected, you need a minimum total of ${minTotalQuantity} ${formData.serviceType}. ` +
+        `Currently: ${quantityPerPost} per post (${totalQuantity} total).`
+      )
+      return
+    }
+
     // Derive targetUrl from the first selected post if possible
     const firstSelected = selectedPosts[0]
     const post = posts.find((p) => p.id === firstSelected)
@@ -163,16 +179,19 @@ const SelectPostsStep = ({ formData, setFormData, onNext, onBack }) => {
                   />
                   {selectedPosts.includes(post.id) && (
                     <div className="absolute inset-0 bg-orange-500 bg-opacity-80 flex items-center justify-center">
-                      <div className="flex items-center text-white font-bold">
+                      <div className="flex flex-col items-center text-white font-bold">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="currentColor"
                           viewBox="0 0 24 24"
-                          className="w-6 h-6 mr-2"
+                          className="w-6 h-6 mb-1"
                         >
                           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                         </svg>
-                        <span>+ {Math.floor(formData.quantity / selectedPosts.length)}</span>
+                        <span className="text-sm">+ {Math.floor(formData.quantity / selectedPosts.length)}</span>
+                        {selectedPosts.length > 1 && Math.floor(formData.quantity / selectedPosts.length) < 100 && (
+                          <span className="text-xs text-yellow-200 mt-1 font-normal">Min: 100/post</span>
+                        )}
                       </div>
                     </div>
                   )}
