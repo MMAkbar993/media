@@ -634,5 +634,126 @@ router.get("/dashboard/stats", async (req, res) => {
   }
 })
 
+// Get all service configurations
+router.get("/services", async (req, res) => {
+  try {
+    logger.info("Fetching service configurations from database")
+    const services = await db("service_configs")
+      .select("*")
+      .orderBy("platform", "asc")
+      .orderBy("service_type", "asc")
+
+    logger.info(`Found ${services.length} service configurations`, {
+      services: services.map((s) => ({
+        id: s.id,
+        platform: s.platform,
+        service_type: s.service_type,
+        service_id: s.five_api_service_id,
+      })),
+    })
+
+    res.json({
+      success: true,
+      services,
+    })
+  } catch (error) {
+    logger.error("Failed to fetch service configurations", {
+      error: error.message,
+      stack: error.stack,
+      service: "social-media-backend",
+    })
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch service configurations",
+    })
+  }
+})
+
+// Update service configuration
+router.patch("/services/:id", async (req, res) => {
+  try {
+    const { id } = req.params
+    const {
+      five_api_service_id,
+      five_api_service_id_backup,
+      service_name,
+      description,
+      price_per_unit,
+      min_quantity,
+      max_quantity,
+      is_active,
+    } = req.body
+
+    // Build update object with only provided fields
+    const updateData = {
+      updated_at: new Date(),
+    }
+
+    if (five_api_service_id !== undefined) {
+      updateData.five_api_service_id = five_api_service_id.toString()
+    }
+    if (five_api_service_id_backup !== undefined) {
+      updateData.five_api_service_id_backup = five_api_service_id_backup
+        ? five_api_service_id_backup.toString()
+        : null
+    }
+    if (service_name !== undefined) {
+      updateData.service_name = service_name
+    }
+    if (description !== undefined) {
+      updateData.description = description
+    }
+    if (price_per_unit !== undefined) {
+      updateData.price_per_unit = parseFloat(price_per_unit)
+    }
+    if (min_quantity !== undefined) {
+      updateData.min_quantity = parseInt(min_quantity)
+    }
+    if (max_quantity !== undefined) {
+      updateData.max_quantity = parseInt(max_quantity)
+    }
+    if (is_active !== undefined) {
+      updateData.is_active = Boolean(is_active)
+    }
+
+    const updated = await db("service_configs").where("id", id).update(updateData)
+
+    if (updated === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Service configuration not found",
+      })
+    }
+
+    // Get updated service config
+    const updatedService = await db("service_configs").where("id", id).first()
+
+    logger.info("Admin updated service configuration", {
+      serviceId: id,
+      updates: updateData,
+      service: "social-media-backend",
+    })
+
+    res.json({
+      success: true,
+      message: "Service configuration updated successfully",
+      service: updatedService,
+    })
+  } catch (error) {
+    logger.error("Failed to update service configuration", {
+      serviceId: req.params.id,
+      error: error.message,
+      stack: error.stack,
+      service: "social-media-backend",
+    })
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to update service configuration",
+    })
+  }
+})
+
 module.exports = router
 

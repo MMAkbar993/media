@@ -340,6 +340,18 @@ class ApiService {
     });
   }
 
+  // Service configuration management
+  async getAdminServices() {
+    return this.request("/api/admin/services");
+  }
+
+  async updateAdminService(serviceId, updateData) {
+    return this.request(`/api/admin/services/${serviceId}`, {
+      method: "PATCH",
+      body: JSON.stringify(updateData),
+    });
+  }
+
   // Helper method to get admin token
   getAdminToken() {
     return localStorage.getItem("adminToken");
