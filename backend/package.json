@@ -4,8 +4,8 @@
   "description": "Backend for social media growth service",
   "main": "index.js",
   "scripts": {
-    "start": "node init && nodemon index.js",
-    "dev": "node init && nodemon index.js",
+    "start": "nodemon index.js",
+    "dev": "nodemon index.js",
     "migrate": "knex migrate:latest",
     "rollback": "knex migrate:rollback",
     "seed": "knex seed:run",
